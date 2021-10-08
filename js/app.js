@@ -1,31 +1,19 @@
+// MODEL
+
 let todos = [];
 
-// main event
-// const $mainEl = document.querySelector('main');
+const generateToDoId = () => Math.max(...todos.map(todo => todo.id), 0) + 1;
+const setToDos = newTodos => (todos = newTodos);
 
-const $newTodo = document.querySelector('.new-todo');
-const $toDoList = document.querySelector('.todo-list');
+// MODEL
 
-// id 생성 함수
-const idGenerator = () => Math.max(...todos.map(todo => todo.id), 0) + 1;
+// VIEW
 
-// Todos 추가 함수
-const addTodo = content =>
-  setTodo([{ id: idGenerator(), content: content, completed: false }, ...todos]);
-
-// setTodo 함수
-const setTodo = newTodos => {
-  todos = newTodos;
-  render();
-  counterRender();
-};
-
-// list render 함수
-const render = () => {
-  $toDoList.innerHTML = todos
+const render = todos => {
+  document.querySelector('.todo-list').innerHTML = todos
     .map(
-      ({ id, content, completed }) => `
-    <li data-id="${id}">
+      ({ id, content, completed, isEditing }) => `
+    <li data-id="${id}"${isEditing ? ' class="editing"' : ''}>
       <div class="view">
         <input type="checkbox" class="toggle" ${completed ? 'checked' : ''} />
         <label>${content}</label>
@@ -35,73 +23,138 @@ const render = () => {
     </li>`
     )
     .join('');
-};
 
-// counter render 함수
-const counterRender = () => {
   document.querySelector('.todo-count').textContent = `
   ${todos.length} ${todos.length > 1 ? 'items' : 'item'} left`;
+
+  showClearcompleted();
+  showFooter();
 };
 
-// 엔터 이벤트
-$newTodo.onkeyup = e => {
+// VIEW
+
+// CONTROLLER
+
+const addTodo = content => {
+  setToDos([
+    { id: generateToDoId(), content: content, completed: false, isEditing: false },
+    ...todos,
+  ]);
+  render(todos);
+  showClearcompleted();
+};
+
+const removeTodo = id => {
+  setToDos(todos.filter(todo => todo.id !== id));
+  render(todos);
+  showClearcompleted();
+};
+
+const removeTodos = todos => {
+  setToDos(todos);
+  render(todos);
+  showClearcompleted();
+};
+
+const editMode = id => {
+  setToDos(todos.map(todo => (todo.id === id ? { ...todo, isEditing: true } : todo)));
+  render(todos);
+};
+
+const editTodo = (id, content) => {
+  setToDos(
+    todos.map(todo => (todo.id === id ? { ...todo, content: content, isEditing: false } : todo))
+  );
+  render(todos);
+};
+
+const checkTodo = (...id) => {
+  id.length
+    ? setToDos(
+        todos.map(todo => (todo.id === id[0] ? { ...todo, completed: !todo.completed } : todo))
+      )
+    : setToDos(todos.map(todo => ({ ...todo, completed: $toggleAll.checked ? true : false })));
+  render(todos);
+  showClearcompleted();
+};
+
+const showClearcompleted = () => {
+  const $clearCompleted = document.querySelector('.clear-completed');
+  todos.filter(todo => todo.completed).length
+    ? $clearCompleted.classList.remove('hidden')
+    : $clearCompleted.classList.add('hidden');
+};
+
+const showFooter = () => {
+  const $main = document.querySelector('.main');
+  const $footer = document.querySelector('.footer');
+  todos.length ? $main.classList.remove('hidden') : $main.classList.add('hidden');
+  todos.length ? $footer.classList.remove('hidden') : $footer.classList.add('hidden');
+};
+
+//------------------------ 이벤트
+const $newToDo = document.querySelector('.new-todo');
+$newToDo.onkeyup = e => {
   if (e.key !== 'Enter') return;
-  if ($newTodo.value.trim() !== '') {
-    addTodo($newTodo.value);
+  if ($newToDo.value.trim() !== '') {
+    addTodo($newToDo.value);
   }
-  $newTodo.value = '';
+  $newToDo.value = '';
 };
 
-// toggle-all 이벤트
-const toggleAll = document.querySelector('.toggle-all');
+const $toggleAll = document.querySelector('.toggle-all');
+$toggleAll.onchange = () => checkTodo();
 
-toggleAll.onchange = () =>
-  setTodo(todos.map(todo => ({ ...todo, completed: toggleAll.checked ? true : false })));
-
-// toggle 이벤트
 const $todoList = document.querySelector('.todo-list');
-
 $todoList.onclick = ({ target }) => {
   if (!(target.matches('.toggle') || target.matches('.destroy'))) return;
+
   const targetId = target.parentNode.parentNode.dataset.id;
-  target.matches('.toggle')
-    ? setTodo(
-        todos.map(todo => (todo.id === +targetId ? { ...todo, completed: !todo.completed } : todo))
-      )
-    : setTodo(todos.filter(todo => todo.id !== +targetId));
+  target.matches('.toggle') ? checkTodo(+targetId) : removeTodo(+targetId);
 };
 
-// editing event
-$todoList.ondblclick = ({ target }) => {
-  if (
-    !(
-      target.matches('.todo-list label') ||
-      (target.matches('.todo-list .edit') && target.value.trim() !== '')
-    )
-  )
-    return;
-  const targetId = target.matches('.todo-list label')
-    ? target.parentNode.parentNode.dataset.id
-    : target.parentNode.dataset.id;
-  [...document.querySelectorAll('.todo-list li')].forEach(todoItem => {
-    if (todoItem.dataset.id === targetId)
-      target.matches('.todo-list label')
-        ? todoItem.classList.add('editing')
-        : todoItem.classList.remove('editing');
-  });
-  if (target.matches('.todo-list .edit'))
-    setTodo(
-      todos.map(todo => (todo.id === +targetId ? { ...todo, content: target.value.trim() } : todo))
-    );
-};
+$todoList.addEventListener('dblclick', ({ target }) => {
+  if (!target.matches('.todo-list label')) return;
 
-//// Enter
+  const targetId = target.parentNode.parentNode.dataset.id;
+  editMode(+targetId);
+});
+
+$todoList.addEventListener('dblclick', ({ target }) => {
+  if (!target.matches('.todo-list .edit') || target.value.trim() === '') return;
+
+  const targetId = target.parentNode.dataset.id;
+  editTodo(+targetId, target.value.trim());
+});
+
 $todoList.onkeyup = e => {
   if (e.key !== 'Enter' || !e.target.matches('.todo-list .edit')) return;
   if (e.target.value.trim() === '') return;
 
   const targetId = e.target.parentNode.dataset.id;
-  setTodo(
-    todos.map(todo => (todo.id === +targetId ? { ...todo, content: e.target.value.trim() } : todo))
-  );
+  editTodo(+targetId, e.target.value.trim());
 };
+
+const $filters = document.querySelector('.filters');
+$filters.onclick = ({ target }) => {
+  [...document.querySelectorAll('.filters a')].forEach(filtersItem => {
+    filtersItem === target
+      ? filtersItem.classList.add('selected')
+      : filtersItem.classList.remove('selected');
+  });
+
+  target.id === 'all'
+    ? render(todos)
+    : target.id === 'active'
+    ? render(todos.filter(todo => !todo.completed))
+    : render(todos.filter(todo => todo.completed));
+};
+
+const $clearCompleted = document.querySelector('.clear-completed');
+$clearCompleted.onclick = () => removeTodos(todos.filter(todo => !todo.completed));
+
+window.addEventListener('DOMContentLoaded', () => {
+  render(todos);
+});
+
+// CONTROLLER

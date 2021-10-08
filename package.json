@@ -1,0 +1,23 @@
+{
+  "name": "todos-v2",
+  "version": "1.0.0",
+  "description": "todos-v2 repo",
+  "main": "index.js",
+  "scripts": {
+    "start": "live-server --port=3000"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jkpark104/todos-v2.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jkpark104/todos-v2/issues"
+  },
+  "homepage": "https://github.com/jkpark104/todos-v2#readme",
+  "devDependencies": {
+    "live-server": "^1.2.1"
+  }
+}
