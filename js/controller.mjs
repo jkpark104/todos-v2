@@ -9,15 +9,18 @@ const $filters = document.querySelector('.filters');
 const $clearCompleted = document.querySelector('.clear-completed');
 
 // state function
-const toRequestRenderWith = newState => {
-  Array.isArray(newState)
-    ? todos.setTodos(newState)
-    : todos.setFilter(newState);
+const changeStateWith = newTodos => {
+  todos.setTodos(newTodos);
+  render(todos.state, todos.currentFilter);
+};
+
+const changeFilterWith = newFilter => {
+  todos.setFilter(newFilter);
   render(todos.state, todos.currentFilter);
 };
 
 const fetchTodos = () => {
-  toRequestRenderWith([
+  changeStateWith([
     { id: 3, content: 'JavaScript', completed: false },
     { id: 2, content: 'CSS', completed: true },
     { id: 1, content: 'HTML', completed: false }
@@ -28,14 +31,14 @@ const generateTodoId = () =>
   Math.max(...todos.state.map(todo => todo.id), 0) + 1;
 
 const addTodo = content => {
-  toRequestRenderWith([
+  changeStateWith([
     { id: generateTodoId(), content, completed: false },
     ...todos.state
   ]);
 };
 
 const toggleTodoCompleted = id => {
-  toRequestRenderWith(
+  changeStateWith(
     todos.state.map(todo =>
       todo.id === +id ? { ...todo, completed: !todo.completed } : todo
     )
@@ -43,21 +46,21 @@ const toggleTodoCompleted = id => {
 };
 
 const toggleAllTodosCompleted = completed => {
-  toRequestRenderWith(todos.state.map(todo => ({ ...todo, completed })));
+  changeStateWith(todos.state.map(todo => ({ ...todo, completed })));
 };
 
 const updateTodoContent = (id, content) => {
-  toRequestRenderWith(
+  changeStateWith(
     todos.state.map(todo => (todo.id === +id ? { ...todo, content } : todo))
   );
 };
 
 const removeTodo = id => {
-  toRequestRenderWith(todos.state.filter(todo => todo.id !== +id));
+  changeStateWith(todos.state.filter(todo => todo.id !== +id));
 };
 
 const removeAllCompletedTodos = () => {
-  toRequestRenderWith(todos.state.filter(todo => !todo.completed));
+  changeStateWith(todos.state.filter(todo => !todo.completed));
 };
 
 // Event bindings
@@ -105,7 +108,7 @@ $filters.onclick = e => {
     $a.classList.toggle('selected', $a === e.target);
   });
 
-  toRequestRenderWith(e.target.id);
+  changeFilterWith(e.target.id);
 };
 
 $clearCompleted.onclick = removeAllCompletedTodos;
