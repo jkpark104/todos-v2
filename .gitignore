@@ -1,1 +1,7 @@
+.gitignore
 node_modules
+package-lock.json
+package.json
+.prettierrc
+babel.config.json
+.eslintrc.json
